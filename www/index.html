@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0d12" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src https://www.youtube.com https://www.youtube-nocookie.com; connect-src 'self';" />
+    <title>Floating Video Player</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <img src="assets/icon.png" alt="" />
+        <div>
+          <strong>Floating Video Player</strong>
+          <span>Phiên bản iPhone &amp; iPad</span>
+        </div>
+      </div>
+      <button id="youtubeBtn" class="secondary" type="button">Mở YouTube</button>
+    </header>
+
+    <main>
+      <section class="controls" aria-label="Điều khiển video">
+        <form id="urlForm">
+          <label for="urlInput">Đường dẫn video</label>
+          <div class="url-row">
+            <input id="urlInput" type="text" inputmode="url" autocomplete="url" autocapitalize="none" spellcheck="false" placeholder="https://youtu.be/… hoặc video ID" required />
+            <button class="primary" type="submit">Phát</button>
+          </div>
+        </form>
+
+        <div class="toolbar">
+          <button id="loopBtn" class="secondary" type="button" aria-pressed="false">↻ Loop</button>
+          <button id="pipHelpBtn" class="secondary" type="button">▣ Cách dùng PiP</button>
+          <span id="status" class="status" role="status" aria-live="polite">Sẵn sàng</span>
+        </div>
+      </section>
+
+      <section class="player-shell" aria-label="Trình phát YouTube">
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon">▶</div>
+          <h1>Xem video trên iPhone và iPad</h1>
+          <p>Dán đường dẫn YouTube ở phía trên. Video được phát bằng trình nhúng chính thức của YouTube.</p>
+        </div>
+        <iframe id="player" title="YouTube video player" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </section>
+    </main>
+
+    <dialog id="pipDialog">
+      <h2>Picture in Picture</h2>
+      <p>Khởi chạy video bằng thao tác chạm, mở toàn màn hình rồi dùng nút PiP nếu trình phát và video cung cấp nút này. Khả năng PiP phụ thuộc YouTube và phiên bản iOS.</p>
+      <form method="dialog"><button class="primary">Đã hiểu</button></form>
+    </dialog>
+
+    <script src="url-parser.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

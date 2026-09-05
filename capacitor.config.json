@@ -1,0 +1,12 @@
+{
+  "appId": "com.local.youtubefloatingplayer",
+  "appName": "Floating Video Player",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "scrollEnabled": false,
+    "allowsLinkPreview": false
+  }
+}

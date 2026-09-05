@@ -1,0 +1,61 @@
+{
+  "name": "youtube-floating-player",
+  "version": "1.0.3",
+  "description": "Trình phát YouTube nổi cho Windows",
+  "main": "src/main.js",
+  "author": "Local",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis portable",
+    "ios:web": "node scripts/build-ios-web.mjs",
+    "ios:sync": "npm run ios:web && cap sync ios",
+    "ios:open": "npm run ios:sync && cap open ios",
+    "ios:assets": "node scripts/prepare-ios-assets.mjs && capacitor-assets generate --ios"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/ios": "^8.5.1",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.25.12"
+  },
+  "build": {
+    "appId": "com.local.youtubefloatingplayer",
+    "productName": "YouTube Hacking Player - a ụt",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
