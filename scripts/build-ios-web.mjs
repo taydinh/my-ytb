@@ -14,6 +14,9 @@ await mkdir(resolve(outputDir, 'assets'), { recursive: true });
 await Promise.all([
   cp(resolve(sourceDir, 'index.html'), resolve(outputDir, 'index.html')),
   cp(resolve(sourceDir, 'styles.css'), resolve(outputDir, 'styles.css')),
+  cp(resolve(sourceDir, 'ios-youtube-browser.js'), resolve(outputDir, 'ios-youtube-browser.js')),
+  cp(resolve(sourceDir, 'ios-pip.js'), resolve(outputDir, 'ios-pip.js')),
+  cp(resolve(sourceDir, 'ios-auto-skip.js'), resolve(outputDir, 'ios-auto-skip.js')),
   cp(resolve(projectDir, 'src', 'url-parser.js'), resolve(outputDir, 'url-parser.js')),
   cp(resolve(projectDir, 'assets', 'icon.png'), resolve(outputDir, 'assets', 'icon.png'))
 ]);

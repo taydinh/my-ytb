@@ -7,8 +7,7 @@ const emptyState = document.querySelector('#emptyState');
 const loopBtn = document.querySelector('#loopBtn');
 const status = document.querySelector('#status');
 const youtubeBtn = document.querySelector('#youtubeBtn');
-const pipHelpBtn = document.querySelector('#pipHelpBtn');
-const pipDialog = document.querySelector('#pipDialog');
+const pipBtn = document.querySelector('#pipBtn');
 
 let currentVideoId = null;
 let loopEnabled = localStorage.getItem('iosLoopEnabled') === 'true';
@@ -31,6 +30,34 @@ function playerUrl(videoId) {
   return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params}`;
 }
 
+const nativePlayer = window.webkit?.messageHandlers?.youtubePlayer;
+
+function updateNativePlayer(videoId) {
+  if (!nativePlayer) return;
+  const rect = player.getBoundingClientRect();
+  nativePlayer.postMessage({
+    ...(videoId ? { videoId, loop: loopEnabled } : {}),
+    rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+    hidden: !currentVideoId
+  });
+}
+
+function playVideo(videoId) {
+  player.classList.add('visible');
+  emptyState.hidden = true;
+  if (nativePlayer) {
+    updateNativePlayer(videoId);
+  } else {
+    player.src = playerUrl(videoId);
+  }
+}
+
+if (nativePlayer) {
+  new ResizeObserver(() => updateNativePlayer()).observe(player);
+  window.addEventListener('resize', () => updateNativePlayer());
+  window.addEventListener('scroll', () => updateNativePlayer(), true);
+}
+
 function renderLoopState() {
   loopBtn.classList.toggle('active', loopEnabled);
   loopBtn.setAttribute('aria-pressed', String(loopEnabled));
@@ -50,9 +77,7 @@ function loadVideo(value) {
   const normalizedUrl = `https://www.youtube.com/watch?v=${videoId}`;
   localStorage.setItem('iosLastVideoUrl', normalizedUrl);
   urlInput.value = normalizedUrl;
-  player.src = playerUrl(videoId);
-  player.classList.add('visible');
-  emptyState.hidden = true;
+  playVideo(videoId);
   setStatus('Đang phát');
 }
 
@@ -65,11 +90,19 @@ loopBtn.addEventListener('click', () => {
   loopEnabled = !loopEnabled;
   localStorage.setItem('iosLoopEnabled', String(loopEnabled));
   renderLoopState();
-  if (currentVideoId) player.src = playerUrl(currentVideoId);
+  if (currentVideoId) playVideo(currentVideoId);
   setStatus(loopEnabled ? 'Đã bật loop' : 'Đã tắt loop');
 });
 
+window.addEventListener('youtube:video-selected', (event) => {
+  if (typeof event.detail?.url === 'string') loadVideo(event.detail.url);
+});
+
 youtubeBtn.addEventListener('click', async () => {
+  if (nativePlayer) {
+    nativePlayer.postMessage({ action: 'openBrowser' });
+    return;
+  }
   try {
     await Browser.open({ url: 'https://www.youtube.com/' });
   } catch {
@@ -77,9 +110,27 @@ youtubeBtn.addEventListener('click', async () => {
   }
 });
 
-pipHelpBtn.addEventListener('click', () => {
-  if (typeof pipDialog.showModal === 'function') pipDialog.showModal();
-  else setStatus('Mở video toàn màn hình và chọn nút PiP nếu YouTube cung cấp.');
+pipBtn.addEventListener('click', () => {
+  if (!currentVideoId) {
+    setStatus('Hãy phát video trước khi bật PiP.', true);
+    return;
+  }
+  if (!nativePlayer) {
+    setStatus('Hãy dùng nút PiP trong trình phát hoặc mở ứng dụng iOS.', true);
+    return;
+  }
+  setStatus('Đang yêu cầu phát PiP…');
+  nativePlayer.postMessage({ action: 'startPiP' });
+});
+
+window.addEventListener('youtube:pip-status', (event) => {
+  const messages = {
+    active: 'Đang phát PiP',
+    inline: 'Đã trở về trình phát',
+    unavailable: 'Chưa bật được PiP. Hãy chạm phát video rồi thử lại; nếu cần, mở toàn màn hình và nhấn PiP.'
+  };
+  const state = event.detail?.state;
+  if (messages[state]) setStatus(messages[state], state === 'unavailable');
 });
 
 renderLoopState();
