@@ -3,18 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; frame-src https://www.youtube.com https://www.youtube-nocookie.com;" />
-    <title>YouTube Hacking Player - a ụt</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com;" />
+    <title>Yêu Từ Pé ♥ aut</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="titlebar">
       <div class="drag-region">
         <span class="logo">▶</span>
-        <span class="title">YouTube Hacking Player - a ụt</span>
-        <button id="youtubeHomeBtn" class="youtube-home-btn" type="button" title="Mở trang chủ YouTube">
+        <span class="title">Yêu Từ Pé ♥ aut</span>
+        <button id="settingsBtn" class="settings-header-btn" type="button" title="Cài đặt ứng dụng" aria-label="Cài đặt" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsModal">⚙</button>
+        <button id="youtubeHomeBtn" class="youtube-home-btn" type="button" title="Mở trang chủ YouTube" aria-expanded="false" aria-controls="youtubePanel">
           <span class="youtube-home-icon" aria-hidden="true">▶</span>
           <span class="youtube-home-label">YouTube Home</span>
+        </button>
+        <button id="favoritesMenuBtn" class="favorites-menu-btn" type="button" title="Mở danh sách yêu thích" aria-expanded="false" aria-controls="favoritesPanel">
+          <span aria-hidden="true">☰</span>
+          <span class="favorites-menu-label">Yêu thích</span>
+          <span id="favoritesCount" class="favorites-count">0</span>
         </button>
       </div>
       <div class="window-actions">
@@ -26,6 +32,24 @@
     </header>
 
     <main>
+      <aside id="favoritesPanel" class="favorites-panel" aria-hidden="true">
+        <header class="favorites-panel-header">
+          <div>
+            <strong>Video yêu thích</strong>
+            <span id="favoritesSummary">0 video</span>
+          </div>
+          <button id="closeFavoritesBtn" class="favorites-panel-close" type="button" title="Đóng danh sách yêu thích" aria-label="Đóng danh sách yêu thích">×</button>
+        </header>
+        <div id="favoritesList" class="favorites-list" aria-live="polite"></div>
+        <div id="favoritesEmpty" class="favorites-empty">
+          <span aria-hidden="true">☆</span>
+          <strong>Chưa có video yêu thích</strong>
+          <p>Phát một video rồi nhấn ngôi sao trên thanh công cụ.</p>
+        </div>
+      </aside>
+
+      <div id="favoritesSplitter" class="panel-splitter favorites-splitter" role="separator" aria-label="Điều chỉnh độ rộng danh sách yêu thích" aria-orientation="vertical" aria-controls="favoritesPanel" aria-valuemin="220" aria-valuenow="340" tabindex="0"></div>
+      <div class="primary-pane">
       <section id="controls" class="controls">
         <form id="urlForm" class="url-form">
           <label class="url-box">
@@ -36,15 +60,14 @@
         </form>
 
         <div class="toolbar">
+          <button id="favoriteBtn" class="favorite-btn" type="button" title="Thêm video đang phát vào yêu thích" aria-label="Thêm video đang phát vào yêu thích" aria-pressed="false" disabled>☆</button>
           <button id="compactBtn" class="tool-btn" type="button" title="Chỉ giữ lại khung video">▣ Khung nổi</button>
-          <button id="cleanBtn" class="tool-btn active" type="button" title="Ẩn lớp phủ và tự bấm Skip khi có thể">✓ Chế độ gọn</button>
+          <button id="reloadPlayerBtn" class="tool-btn" type="button" title="Tải lại trình phát; giữ vị trí video thường khi có thể">↻ Tải lại</button>
           <button id="loopBtn" class="tool-btn" type="button" title="Tự phát lại video khi kết thúc" aria-pressed="false">↻ Loop</button>
-          <label class="opacity-control" title="Độ trong suốt cửa sổ">
-            <span>Độ mờ</span>
-            <input id="opacityRange" type="range" min="45" max="100" value="100" />
-          </label>
+          <button id="snapBtn" class="tool-btn" type="button" aria-pressed="false" title="Bật/tắt điều khiển bằng búng tay">🤌 Búng tay</button>
           <span id="status" class="status">Sẵn sàng</span>
         </div>
+        <p id="videoTitle" class="video-title" hidden></p>
       </section>
 
       <section class="player-shell">
@@ -55,18 +78,134 @@
           <div class="hints"><span>📌 Luôn trên cùng</span><span>↔ Tùy chỉnh kích thước</span><span>✓ Tự bấm Skip</span></div>
         </div>
         <webview id="player" partition="persist:youtube-player"></webview>
+        <div id="snapFeedback" class="snap-feedback" aria-hidden="true" hidden>
+          <span class="snap-feedback-icon">🤌</span>
+          <span id="snapFeedbackText" class="snap-feedback-text">Tạm dừng</span>
+        </div>
         <div class="floating-controls">
-          <span class="drag-handle" title="Kéo để di chuyển">⠿</span>
+          <button class="drag-handle" type="button" title="Kéo để di chuyển" aria-label="Kéo để di chuyển">⠿</button>
           <button id="compactHomeBtn" type="button" title="Mở trang chủ YouTube" aria-label="Mở trang chủ YouTube">⌂</button>
           <button id="compactPinBtn" type="button" title="Ghim/bỏ ghim">📌</button>
           <button id="compactLoopBtn" type="button" title="Bật loop video" aria-label="Bật loop video" aria-pressed="false">↻</button>
+          <button id="compactSnapBtn" type="button" title="Bật/tắt búng tay" aria-label="Bật/tắt búng tay" aria-pressed="false">🤌</button>
           <button id="showControlsBtn" type="button" title="Hiện thanh điều khiển">•••</button>
           <button id="compactCloseBtn" class="compact-close" type="button" title="Đóng">×</button>
         </div>
       </section>
+      </div>
+
+      <div id="panelSplitter" class="panel-splitter" role="separator" aria-label="Điều chỉnh độ rộng YouTube Home" aria-orientation="vertical" aria-valuemin="360" aria-valuenow="620" tabindex="0"></div>
+      <aside id="youtubePanel" class="youtube-panel" aria-hidden="true">
+        <header class="youtube-panel-header">
+          <div class="youtube-panel-title">
+            <span class="youtube-home-icon" aria-hidden="true">▶</span>
+            <span>YouTube Home</span>
+          </div>
+          <button id="closeYoutubePanelBtn" class="youtube-panel-close" type="button" title="Đóng YouTube Home" aria-label="Đóng YouTube Home">×</button>
+        </header>
+        <webview id="youtubeBrowser" partition="persist:youtube-player"></webview>
+      </aside>
     </main>
 
+    <!-- Modal Cài đặt -->
+    <div id="settingsModal" class="modal-backdrop" aria-hidden="true" hidden>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+        <div class="modal-header">
+          <h2 id="settingsModalTitle" class="modal-title">⚙ Cài đặt</h2>
+          <button id="closeSettingsBtn" class="modal-close" type="button" title="Đóng" aria-label="Đóng">×</button>
+        </div>
+        <div class="modal-body">
+          <section class="settings-card" aria-labelledby="generalSettingsTitle">
+            <div class="settings-card-title">
+              <h3 id="generalSettingsTitle">Cài đặt chung</h3>
+            </div>
+            <div class="settings-field">
+              <button id="cleanBtn" class="tool-btn active" type="button" aria-pressed="true" title="Ẩn lớp phủ và tự bấm Skip khi có thể">✓ Chế độ gọn</button>
+              <p class="settings-desc">Ẩn lớp phủ quảng cáo và tự bấm Bỏ qua khi có thể.</p>
+            </div>
+            <div class="settings-field">
+              <button id="adblockBtn" class="tool-btn" type="button" aria-pressed="false" disabled title="Chặn quảng cáo trước khi tải; tắt nếu video gặp lỗi">Chặn quảng cáo…</button>
+              <p class="settings-desc">Chặn quảng cáo trước khi tải YouTube; tắt nếu video gặp lỗi.</p>
+            </div>
+            <label class="opacity-control" title="Độ trong suốt cửa sổ">
+              <span>Độ mờ</span>
+              <input id="opacityRange" type="range" min="45" max="100" value="100" />
+            </label>
+          </section>
+          <section class="settings-card">
+            <div class="settings-card-header">
+              <div class="settings-card-title">
+                <span class="settings-card-icon">🤌</span>
+                <div>
+                  <h3>Điều khiển bằng búng tay</h3>
+                  <p class="settings-desc">Búng tay để Tạm dừng hoặc Tiếp tục phát video</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input id="snapToggle" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="settings-field">
+              <span class="field-label">Trạng thái Micro:</span>
+              <span id="micStatusBadge" class="status-badge idle">⚪ Đã tắt</span>
+            </div>
+
+            <div class="settings-field live-test-box">
+              <div class="field-label-group">
+                <span class="field-label">Thử búng tay trước micro:</span>
+                <span id="snapIndicator" class="snap-indicator">✓ Đã nhận diện!</span>
+              </div>
+              <div class="meter-container">
+                <div id="micMeterBar" class="meter-bar" style="width: 0%;"></div>
+              </div>
+              <div class="meter-labels">
+                <span>Yên lặng</span>
+                <span>Ngưỡng nhận diện</span>
+                <span>Mạnh</span>
+              </div>
+            </div>
+
+            <div class="settings-field">
+              <div class="field-label-group">
+                <label for="snapSensitivityRange" class="field-label">Độ nhạy nhận diện:</label>
+                <span id="sensitivityValueLabel" class="field-value">60%</span>
+              </div>
+              <input id="snapSensitivityRange" type="range" min="1" max="100" value="60" />
+              <div class="slider-labels">
+                <span>Thấp (ít nhầm)</span>
+                <span>Chuẩn</span>
+                <span>Cao (nhạy hơn)</span>
+              </div>
+            </div>
+
+            <div class="settings-field">
+              <div class="field-label-group">
+                <label for="snapCooldownSelect" class="field-label">Thời gian chờ giữa 2 lần búng:</label>
+              </div>
+              <select id="snapCooldownSelect" class="settings-select">
+                <option value="500">0.5 giây (Nhanh)</option>
+                <option value="800" selected>0.8 giây (Tiêu chuẩn)</option>
+                <option value="1200">1.2 giây (Tránh kích hoạt kép)</option>
+              </select>
+            </div>
+
+            <div class="settings-tip">
+              💡 <strong>Mẹo:</strong> Búng tay dứt khoát cách microphone 20cm – 1m. Thuật toán lọc dải tần ~3.8 kHz giúp loại trừ tiếng nói chuyện và tiếng đập bàn.
+            </div>
+          </section>
+        </div>
+        <div class="modal-footer">
+          <button id="doneSettingsBtn" class="modal-btn primary" type="button">Xong</button>
+        </div>
+      </div>
+    </div>
+
     <script src="url-parser.js"></script>
+    <script src="favorites-store.js"></script>
+    <script src="player-shortcuts.js"></script>
+    <script src="snap-detector.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

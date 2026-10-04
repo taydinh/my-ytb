@@ -1,19 +1,47 @@
-# YouTube Hacking Player - a ụt
+# Yêu Từ Pé
 
 Ứng dụng Windows nhỏ gọn để xem video YouTube trong cửa sổ luôn nổi trên các ứng dụng khác.
 
 ## Chức năng
 
 - Dán URL YouTube và nhấn Enter để phát.
-- Mở YouTube Home để tìm kiếm, duyệt đề xuất và xem channel như trên trình duyệt; khi chọn video, ứng dụng tự chuyển về khung phát cố định.
+- Mở YouTube Home trong panel gắn liền bên phải để tìm kiếm, duyệt đề xuất và xem channel mà không che trình phát; kéo thanh chia để đổi độ rộng, panel có thể đóng riêng và tự đóng khi chuyển sang khung nổi.
 - Hỗ trợ link `youtube.com/watch`, `youtu.be`, Shorts, Live và Embed.
 - Ghim cửa sổ luôn trên cùng.
 - Chế độ khung nổi 16:9, kéo thay đổi kích thước tự do.
 - Điều chỉnh độ trong suốt.
 - Bật/tắt loop để tự động phát lại video khi kết thúc; lựa chọn được ghi nhớ.
+- Điều khiển Play/Stop bằng âm thanh búng tay (Finger Snap) thu từ microphone; có thể bật/tắt nhanh trên thanh công cụ hoặc tinh chỉnh độ nhạy, thời gian chờ và thử micro trong bảng Cài đặt.
+- Phím tắt kiểu YouTube: `J` lùi 10 giây, `K` phát/tạm dừng và `L` tiến 10 giây.
 - Nhớ vị trí, kích thước và URL gần nhất.
 - Tự chuyển sang chế độ xem tương thích khi chủ video hoặc YouTube không cho phép phát dạng embed.
 - Chế độ gọn tự tua nhanh quảng cáo đến cuối, tắt tiếng trong khoảnh khắc xử lý và bấm nút Skip ngay khi YouTube cung cấp nút đó.
+- Chặn quảng cáo bằng bộ lọc Ghostery trong phiên YouTube trên Windows; công tắc riêng được ghi nhớ, mặc định bật.
+- Nút Tải lại áp dụng đầy đủ thay đổi bộ lọc và cố khôi phục vị trí, âm lượng, tốc độ, trạng thái tạm dừng của video thường.
+
+### Điều khiển bằng âm thanh búng tay (Finger Snap Control)
+
+- **Nguyên lý hoạt động**: Sử dụng Web Audio API tích hợp sẵn với bộ lọc dải tần kép (Dual-Band Filter): dải búng tay tần số cao (~3.8 kHz) và dải đối chứng tần số thấp (< 1.0 kHz). Thuật toán phân tích tỷ lệ năng lượng phổ (Spectral Energy Ratio), độ nhọn xung tức thời (Crest Factor) và tốc độ suy giảm năng lượng nhanh (Fast Decay) để nhận diện chính xác tiếng búng ngón tay, đồng thời loại trừ triệt để tiếng nói chuyện, tiếng nhạc loa và tiếng gõ mặt bàn.
+- **Bật/tắt**:
+  - Nhấn nút **`🤌 Búng tay`** trên thanh công cụ hoặc khung nổi để bật/tắt nhanh.
+  - Hoặc mở **`⚙ Cài đặt`**, bật công tắc **Điều khiển bằng búng tay**.
+- **Bảng Cài đặt & Kiểm tra trực tiếp**:
+  - **Trạng thái Micro**: Hiển thị rõ `🟢 Đang lắng nghe`, `⚪ Đã tắt` hoặc `🔴 Lỗi micro`.
+  - **Thước đo âm lượng trực tiếp (VU Meter)**: Hiển thị mức tín hiệu mic thời gian thực kèm nhãn `✓ Đã nhận diện!` chớp sáng khi búng tay, giúp người dùng kiểm tra ngay trước khi xem video.
+  - **Độ nhạy (Sensitivity)**: Điều chỉnh từ 1% đến 100% (mặc định 60%). Mức cao sẽ nhạy hơn với tiếng búng tay nhẹ; mức thấp giúp giảm thiểu kích hoạt nhầm.
+  - **Thời gian chờ (Cooldown)**: 0.5s / 0.8s / 1.2s giúp chống kích hoạt đúp hoặc tiếng vang phòng.
+- **Phản hồi trực quan**: Khi nhận diện thành công tiếng búng tay, ứng dụng hiển thị thông báo HUD sinh động trên khung phát (`🤌 Tiếp tục phát` hoặc `🤌 Tạm dừng`) và cập nhật thanh trạng thái.
+- **Quyền riêng tư**: Khi tắt tính năng, ứng dụng ngắt hoàn toàn MediaStream track, tắt đèn báo microphone trên Windows taskbar.
+
+### Chặn quảng cáo trên Windows
+
+Bộ lọc đóng gói sẵn hoạt động trước khi tải YouTube, áp dụng cả YouTube Home và khung phát. Khi bật, ứng dụng kiểm tra bản cập nhật trong nền (cache tối đa một ngày); bộ lọc tải thành công được dùng ở lần khởi động sau. Mất mạng vẫn dùng bộ lọc đã lưu hoặc bản đóng gói. Nếu không khởi động được bộ chặn, giao diện báo lỗi và tính năng tự Skip vẫn dùng được qua Chế độ gọn.
+
+Nếu video gặp lỗi phát, tắt **Chặn quảng cáo**, rồi nhấn **Tải lại** nếu cần. Bật/tắt không tự tải lại video. CSS/script của bộ lọc đã chạy trong trang chỉ được loại bỏ hoàn toàn khi tải lại. Tính năng khôi phục vị trí không áp dụng cho livestream và chỉ thực hiện được khi trình phát tải được nội dung chính.
+
+Bộ lọc dùng `@ghostery/adblocker-electron` (MPL-2.0) và các danh sách ads-only do dự án Ghostery duy trì, gồm EasyList và bộ lọc uBlock Origin. Nguồn, giấy phép và script tài nguyên: https://github.com/ghostery/adblocker/tree/master/packages/adblocker/assets . Không bảo đảm chặn mọi quảng cáo YouTube; nội dung tài trợ nằm trong chính video không được loại bỏ.
+
+Trước khi phát hành có thể cập nhật bộ lọc đóng gói bằng `npm run adblock:update`. Chạy kiểm thử Windows bằng `npm run test:windows`; kiểm thử tích hợp Electron nằm tại `tests/windows-electron-smoke.cjs` và dùng profile tạm.
 
 ## Chạy trong môi trường phát triển
 
@@ -27,8 +55,12 @@ npm start
 ```powershell
 npm run dist
 ```
-
 File cài đặt và bản portable sẽ nằm trong thư mục `dist`.
+
+```
+npm run pack 
+```
+//D:\Vibe Coding\my-ytp\dist\win-unpacked
 
 ## Phiên bản iPhone và iPad
 
@@ -57,7 +89,10 @@ Trình phát vẫn dùng YouTube nhúng trong `WKWebView`, không tách luồng 
 
 ## Phím tắt
 
+- `J`: tua lùi 10 giây.
+- `K`: phát/tạm dừng.
+- `L`: tua tiến 10 giây.
 - `Ctrl+P`: bật/tắt ghim cửa sổ.
 - `Esc`: thoát chế độ khung nổi.
 
-> Lưu ý: YouTube thường xuyên thay đổi giao diện và cơ chế phân phối quảng cáo. Tự bấm Skip là tính năng best-effort; ứng dụng không can thiệp vào luồng video hoặc đảm bảo loại bỏ mọi quảng cáo. Ứng dụng không chặn request quảng cáo vì việc này có thể khiến YouTube từ chối phát video.
+> Lưu ý: YouTube thường xuyên thay đổi giao diện và cơ chế phân phối quảng cáo. Bộ chặn trên Windows và tự bấm Skip đều là tính năng best-effort; YouTube có thể từ chối phát khi phát hiện bộ chặn. iOS tiếp tục chỉ tự bấm Skip, không chặn request.

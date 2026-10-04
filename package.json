@@ -1,6 +1,6 @@
 {
   "name": "youtube-floating-player",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Trình phát YouTube nổi cho Windows",
   "main": "src/main.js",
   "author": "Local",
@@ -10,6 +10,8 @@
     "dev": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --win nsis portable",
+    "adblock:update": "node scripts/update-adblock.cjs",
+    "test:windows": "node --test tests/windows-*.test.cjs",
     "ios:web": "node scripts/build-ios-web.mjs",
     "ios:sync": "npm run ios:web && cap sync ios",
     "ios:open": "npm run ios:sync && cap open ios",
@@ -27,7 +29,7 @@
   },
   "build": {
     "appId": "com.local.youtubefloatingplayer",
-    "productName": "YouTube Hacking Player - a ụt",
+    "productName": "Yêu Từ Pé",
     "asar": true,
     "files": [
       "src/**/*",
@@ -57,5 +59,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
+  },
+  "dependencies": {
+    "@ghostery/adblocker-electron": "2.18.2"
   }
 }
