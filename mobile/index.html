@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0b0d12" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src https://www.youtube.com https://www.youtube-nocookie.com; connect-src 'self';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; connect-src 'self';" />
     <title>Yêu Từ Pé</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -17,7 +17,10 @@
           <span>Phiên bản iPhone &amp; iPad</span>
         </div>
       </div>
-      <button id="youtubeBtn" class="secondary" type="button">Mở YouTube</button>
+      <div class="header-actions">
+        <button id="historyBtn" class="secondary" type="button">History</button>
+        <button id="youtubeBtn" class="secondary" type="button">Mở YouTube</button>
+      </div>
     </header>
 
     <main>
@@ -46,6 +49,17 @@
         <iframe id="player" title="YouTube video player" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
       </section>
     </main>
+
+    <dialog id="historyDialog" aria-labelledby="historyTitle">
+      <div class="dialog-header">
+        <div>
+          <h2 id="historyTitle">History</h2>
+          <p>50 video nghe gần nhất</p>
+        </div>
+        <button id="historyCloseBtn" class="icon-button" type="button" aria-label="Đóng History">×</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </dialog>
 
     <script src="url-parser.js"></script>
     <script src="app.js"></script>

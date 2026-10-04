@@ -15,6 +15,8 @@ private final class PlayerMessageHandler: NSObject, WKScriptMessageHandler {
             owner?.openYouTubeBrowser()
         } else if body["action"] as? String == "startPiP" {
             owner?.startPiP()
+        } else if body["action"] as? String == "getVideoMetadata", let videoID = body["videoId"] as? String {
+            owner?.fetchVideoMetadata(videoID)
         } else {
             owner?.updatePlayer(body)
         }
@@ -42,6 +44,7 @@ class PlayerBridgeViewController: CAPBridgeViewController {
     }()
     fileprivate var videoWebView: WKWebView?
     fileprivate var pipFrame: WKFrameInfo?
+    private var pipIsActive = false
     private lazy var pipMessageHandler: PiPMessageHandler = {
         let handler = PiPMessageHandler()
         handler.owner = self
@@ -49,6 +52,8 @@ class PlayerBridgeViewController: CAPBridgeViewController {
     }()
 
     fileprivate func reportPiP(_ state: String) {
+        if state == "active" { pipIsActive = true }
+        if state == "inline" || state == "unavailable" { pipIsActive = false }
         guard let data = try? JSONSerialization.data(withJSONObject: ["state": state]),
               let json = String(data: data, encoding: .utf8) else { return }
         webView?.evaluateJavaScript("window.dispatchEvent(new CustomEvent('youtube:pip-status', {detail: \(json)}));", completionHandler: nil)
@@ -62,6 +67,58 @@ class PlayerBridgeViewController: CAPBridgeViewController {
         player.evaluateJavaScript("window.__startYouTubePiP()", in: frame, in: .page) { [weak self] result in
             if case .failure = result { self?.reportPiP("unavailable") }
         }
+    }
+
+    fileprivate func startPiPWhenBackgrounding() {
+        guard let player = videoWebView, let frame = pipFrame else { return }
+        // Do not trust the last reported state here. WebKit occasionally misses
+        // the inline event after PiP closes; the page-side function is idempotent
+        // and checks the actual video presentation mode.
+        player.evaluateJavaScript("window.__startYouTubePiPIfPlaying?.()", in: frame, in: .page) { [weak self] result in
+            if case .failure = result { self?.reportPiP("unavailable") }
+        }
+    }
+
+    fileprivate func recoverPiPAfterForeground() {
+        guard pipIsActive, let player = videoWebView, pipFrame != nil else { return }
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .moviePlayback)
+            try session.setActive(true)
+        } catch {
+            NSLog("Unable to reactivate PiP audio session: %@", error.localizedDescription)
+        }
+
+        player.setNeedsLayout()
+        player.layoutIfNeeded()
+        let recover = { [weak self] in
+            guard let self, let currentFrame = self.pipFrame else { return }
+            player.evaluateJavaScript("window.__recoverYouTubePiP?.()", in: currentFrame, in: .page) { _ in }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: recover)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: recover)
+    }
+
+    fileprivate func fetchVideoMetadata(_ videoID: String) {
+        guard videoID.range(of: "^[A-Za-z0-9_-]{11}$", options: .regularExpression) != nil,
+              var components = URLComponents(string: "https://www.youtube.com/oembed") else { return }
+        components.queryItems = [
+            URLQueryItem(name: "url", value: "https://www.youtube.com/watch?v=\(videoID)"),
+            URLQueryItem(name: "format", value: "json")
+        ]
+        guard let url = components.url else { return }
+        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+            guard let data,
+                  let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let title = response["title"] as? String else { return }
+            let thumbnailURL = response["thumbnail_url"] as? String ?? "https://i.ytimg.com/vi/\(videoID)/hqdefault.jpg"
+            let detail: [String: String] = ["videoId": videoID, "title": title, "thumbnailUrl": thumbnailURL]
+            guard let jsonData = try? JSONSerialization.data(withJSONObject: detail),
+                  let json = String(data: jsonData, encoding: .utf8) else { return }
+            DispatchQueue.main.async {
+                self?.webView?.evaluateJavaScript("window.dispatchEvent(new CustomEvent('youtube:video-metadata', {detail: \(json)}));", completionHandler: nil)
+            }
+        }.resume()
     }
 
 
@@ -294,5 +351,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
         SceneDelegateProxy.shared.scene(scene, continue: userActivity)
+    }
+
+    func sceneWillResignActive(_ scene: UIScene) {
+        // Start while the scene is still active: once iOS has fully suspended the
+        // app, WebKit may reject a new PiP presentation request.
+        (window?.rootViewController as? PlayerBridgeViewController)?.startPiPWhenBackgrounding()
+    }
+
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        (window?.rootViewController as? PlayerBridgeViewController)?.recoverPiPAfterForeground()
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        (window?.rootViewController as? PlayerBridgeViewController)?.recoverPiPAfterForeground()
     }
 }
