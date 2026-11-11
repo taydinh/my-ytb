@@ -1,6 +1,6 @@
 {
   "name": "youtube-floating-player",
-  "version": "1.0.13",
+  "version": "1.0.15",
   "description": "Trình phát YouTube nổi cho Windows",
   "main": "src/main.js",
   "author": "Local",

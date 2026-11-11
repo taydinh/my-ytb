@@ -29,7 +29,7 @@ function setup({ errorText = '', errorPanel = false, pathname = '/embed/test', v
   const root = { style: createStyle(), classList: { contains: () => ad },
     querySelector: selector => selector === '#__ytfp_ambient_wrap' ? ambientWrap : selector === '.html5-video-container' ? videoContainer : video,
     prepend: element => { ambientWrap = element; },
-    getVideoData: () => ({ title: videoTitle, isLive: false }) };
+    getVideoData: () => ({ video_id: 'test', title: videoTitle, isLive: false }) };
   const classes = new Set();
   const document = { adoptedStyleSheets: [], documentElement: { style: createStyle(), classList: {
       contains: name => classes.has(name), toggle: (name, on) => { if (on) classes.add(name); else classes.delete(name); } } }, body: { style: createStyle(), innerText: errorText },
@@ -311,6 +311,20 @@ test('syncing a recommended video updates URL and resets metadata without reload
   context.historyRecorded = true;
   vm.runInContext("syncPlayingVideo('dQw4w9WgXcQ'); syncPlayingVideo('')", context);
   assert.equal(context.historyRecorded, true);
+});
+
+test('watch playback starts once after content is ready and respects a later pause', () => {
+  const s = setup({ pathname: '/watch' });
+  s.video.pause();
+  s.video.readyState = 2;
+  s.inject();
+  assert.equal(s.video.paused, true);
+  s.setAd(false);
+  s.tick();
+  assert.equal(s.video.paused, false);
+  s.video.pause();
+  s.tick();
+  assert.equal(s.video.paused, true);
 });
 
 test('reload restore waits through ads and restores position and paused state only once', () => {
