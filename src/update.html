@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'">
+  <title>Cập nhật Yêu Từ Pé</title>
+  <link rel="stylesheet" href="update.css">
+</head>
+<body>
+  <main role="dialog" aria-modal="true" aria-labelledby="title">
+    <span class="badge">YÊU TỪ PÉ · CẬP NHẬT</span>
+    <h1 id="title">Đang chuẩn bị cập nhật</h1>
+    <p id="status" role="status" aria-live="polite"></p>
+    <pre id="notes"></pre>
+    <section id="progressSection" hidden>
+      <div class="progress-label"><span>Tiến trình tải xuống</span><strong id="percent">0%</strong></div>
+      <progress id="progress" max="100" value="0" aria-label="Tiến trình cập nhật"></progress>
+    </section>
+    <p class="hint">Cookie đăng nhập và danh sách yêu thích được giữ nguyên. Ứng dụng sẽ tự mở lại sau khi cập nhật thành công.</p>
+    <footer><button id="secondary" type="button">Để sau</button><button id="primary" type="button">Cập nhật ngay</button></footer>
+  </main>
+  <script src="update-renderer.js"></script>
+</body>
+</html>

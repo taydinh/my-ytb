@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session, shell, screen, Tray, Menu, net } = require('electron');
+const { app, BrowserWindow, ipcMain, session, shell, screen, Tray, Menu, net, dialog } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { extractBrowsableVideoId } = require('./url-parser');
@@ -6,6 +6,9 @@ const { PlayerBlocker: ElectronBlocker } = require('./electron-blocker');
 const { createAdblock } = require('./adblock');
 const { registerWindowsAppIdentity } = require('./windows-app-identity');
 const { getAction } = require('./player-shortcuts');
+const { checkForUpdate, downloadUpdate, startInstaller } = require('./update-service');
+const { createUpdateWindow } = require('./update-window');
+const { restoreUpdateProfile, flushUpdateProfile } = require('./update-profile');
 
 const APP_ID = 'com.local.youtubefloatingplayer';
 const APP_NAME = 'Yêu Từ Pé';
@@ -14,6 +17,7 @@ const APP_NAME = 'Yêu Từ Pé';
 // unpacked builds do not have a Start Menu shortcut for Windows to resolve, so
 // also register its friendly name for the current user.
 app.setName(APP_NAME);
+restoreUpdateProfile(app);
 if (process.platform === 'win32') {
   app.setAppUserModelId(APP_ID);
   registerWindowsAppIdentity({ appId: APP_ID, appName: APP_NAME });
@@ -26,6 +30,68 @@ let saveTimer;
 let adblock;
 let youtubePanelOriginalBounds = null;
 let playerWebContentsId = null;
+let updating = false;
+let updatePopup = null;
+
+async function checkUpdates(manual = false) {
+  if (updating || process.platform !== 'win32') return;
+  if (!app.isPackaged) {
+    if (manual) await dialog.showMessageBox({ message: 'Tính năng cập nhật chỉ hoạt động trên bản đóng gói Windows.' });
+    return;
+  }
+  updating = true;
+  let update;
+  try {
+    update = await checkForUpdate(app.getVersion(), net.fetch.bind(net));
+    if (!update) {
+      if (manual) await dialog.showMessageBox({ message: `Bạn đang dùng phiên bản mới nhất (${app.getVersion()}).` });
+      return;
+    }
+    showMainWindow();
+    updatePopup = createUpdateWindow({ BrowserWindow, ipcMain, parent: mainWindow, currentVersion: app.getVersion(), update });
+    while (true) {
+      const action = await updatePopup.waitForAction();
+      if (action === 'dismiss') {
+        updatePopup.destroy();
+        updatePopup = null;
+        if (update.isMandatory) app.quit();
+        return;
+      }
+      updatePopup.setState({ phase: 'downloading', title: `Đang cập nhật lên ${update.version}`, status: 'Đang tải gói cập nhật…', percent: 0, primary: null, secondary: null });
+      try {
+        const directory = fs.mkdtempSync(path.join(app.getPath('temp'), 'YTP-update-'));
+        const packagePath = await downloadUpdate(update, directory, progress => {
+          updatePopup.setState({ phase: 'downloading', status: 'Đang tải gói cập nhật…', percent: progress * 100, primary: null, secondary: null });
+          if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setProgressBar(progress);
+        }, net.fetch.bind(net));
+        updatePopup.setState({ phase: 'preparing', status: 'Đã xác minh gói cập nhật. Đang lưu cookie và dữ liệu ứng dụng…', percent: 100, primary: null, secondary: null });
+        await flushUpdateProfile([session.defaultSession, session.fromPartition('persist:youtube-player')]);
+        updatePopup.setState({ phase: 'preparing', status: 'Đang mở trình cài đặt. Tiến trình cài đặt sẽ tiếp tục trong popup…', percent: 100, primary: null, secondary: null });
+        await startInstaller({ packagePath, directory,
+          targetExecutable: process.env.PORTABLE_EXECUTABLE_FILE || process.execPath,
+          portable: Boolean(process.env.PORTABLE_EXECUTABLE_FILE), userDataPath: app.getPath('userData') });
+        updatePopup.destroy();
+        updatePopup = null;
+        app.quit();
+        return;
+      } catch (error) {
+        updatePopup.setState({ phase: 'error', title: 'Chưa thể cập nhật', status: error.message, percent: 0,
+          primary: 'Thử lại', secondary: update.isMandatory ? 'Thoát ứng dụng' : 'Để sau' });
+      }
+    }
+  } catch (error) {
+    updatePopup?.destroy();
+    updatePopup = null;
+    if (manual || update) await dialog.showMessageBox({ type: 'error', title: 'Cập nhật thất bại', message: error.message });
+    if (update?.isMandatory) app.quit();
+  } finally {
+    updatePopup?.destroy();
+    updatePopup = null;
+    updating = false;
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setProgressBar(-1);
+    if (tray && !tray.isDestroyed()) tray.setToolTip(APP_NAME);
+  }
+}
 
 function statePath() {
   return path.join(app.getPath('userData'), 'window-state.json');
@@ -57,6 +123,7 @@ function saveState(extra = {}) {
 }
 
 function showMainWindow() {
+  if (updatePopup) { updatePopup.focus(); return; }
   if (!mainWindow || mainWindow.isDestroyed()) {
     createWindow();
     return;
@@ -74,10 +141,12 @@ function createTray() {
   tray.setToolTip(APP_NAME);
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Mở ứng dụng', click: showMainWindow },
+    { label: `Kiểm tra cập nhật (v${app.getVersion()})`, click: () => checkUpdates(true) },
     { type: 'separator' },
     {
       label: 'Thoát',
       click: () => {
+        if (updatePopup) { updatePopup.focus(); return; }
         isQuitting = true;
         app.quit();
       }
@@ -199,6 +268,9 @@ app.whenReady().then(() => {
 
   createWindow();
   createTray();
+  checkUpdates();
+  const updateTimer = setInterval(() => checkUpdates(), 30 * 60 * 1000);
+  updateTimer.unref();
   adblock.refresh().catch(() => { /* Keep bundled/cached filters when offline. */ });
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -206,7 +278,8 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('before-quit', () => {
+app.on('before-quit', event => {
+  if (updatePopup) { event.preventDefault(); updatePopup.focus(); return; }
   isQuitting = true;
 });
 
@@ -315,4 +388,11 @@ ipcMain.handle('window:set-youtube-panel', (event, open) => {
     mainWindow.setMinimumSize(360, 240);
   }
   return shouldOpen;
+});
+
+ipcMain.handle('window:toggle-visibility', (event) => {
+  if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error('Unauthorized sender');
+  if (mainWindow.isVisible() && !mainWindow.isMinimized()) mainWindow.hide();
+  else showMainWindow();
+  return mainWindow.isVisible();
 });

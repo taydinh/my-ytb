@@ -1,6 +1,6 @@
 {
   "name": "youtube-floating-player",
-  "version": "1.0.5",
+  "version": "1.0.13",
   "description": "Trình phát YouTube nổi cho Windows",
   "main": "src/main.js",
   "author": "Local",
@@ -12,6 +12,8 @@
     "dist": "electron-builder --win nsis portable",
     "adblock:update": "node scripts/update-adblock.cjs",
     "test:windows": "node --test tests/windows-*.test.cjs",
+    "test:updates:electron": "node scripts/test-update-electron.cjs",
+    "test:updates:installer": "node scripts/test-update-installer.cjs",
     "ios:web": "node scripts/build-ios-web.mjs",
     "ios:sync": "npm run ios:web && cap sync ios",
     "ios:open": "npm run ios:sync && cap open ios",

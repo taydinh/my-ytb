@@ -57,6 +57,28 @@ npm run dist
 ```
 File cài đặt và bản portable sẽ nằm trong thư mục `dist`.
 
+### Cập nhật từ server (Windows, từ bản 1.0.6)
+
+Ứng dụng kiểm tra `https://timeclock.maskermedia.com/updates/ytp/win-x64/latest.json` khi khởi động và mỗi 30 phút. Nhấp phải biểu tượng khay hệ thống → **Kiểm tra cập nhật** để kiểm tra ngay. Khi có phiên bản mới, ứng dụng hiển thị ghi chú phát hành, tải ZIP, xác minh kích thước/SHA-256, đóng để thay file rồi mở lại. Nếu `mandatory` là `true` hoặc phiên bản hiện tại thấp hơn `minimumVersion`, người dùng phải cập nhật hoặc thoát. Khi không kết nối được server, ứng dụng vẫn mở bình thường như project mẫu.
+
+Popup cập nhật nằm trên cửa sổ chính và khóa thao tác với ứng dụng cho đến khi người dùng chọn một hành động trong popup. Khi tải xuống, popup hiển thị phần trăm và trạng thái; trong lúc tải không thể đóng popup. Sau khi lưu dữ liệu và đóng ứng dụng, cửa sổ cài đặt độc lập tiếp tục hiển thị phần trăm giải nén, thay file và mở lại ứng dụng. Nếu tải thất bại, popup cho phép thử lại; nếu cài đặt thất bại, trình cập nhật khôi phục các file đã thay và hiển thị lỗi.
+
+Trước khi cài đặt, ứng dụng lưu localStorage và cookie của cả phiên chính lẫn `persist:youtube-player` xuống đĩa. Trình cập nhật chỉ thay file ứng dụng, bảo vệ thư mục dữ liệu người dùng và truyền đúng đường dẫn profile cũ khi tự mở lại. Cookie đăng nhập YouTube, danh sách video yêu thích và thiết lập trong profile được giữ nguyên.
+
+Kiểm tra cập nhật: `npm run test:windows`, `npm run test:updates:electron` và `npm run test:updates:installer`. Bài kiểm tra Electron dùng profile tạm để xác nhận popup khóa cửa sổ chính, hiển thị tiến trình/thử lại, và cookie cùng danh sách yêu thích còn nguyên sau khi khởi động tiến trình mới với đường dẫn ứng dụng khác. Bài kiểm tra installer mở cửa sổ tiến trình thực tế với file chạy giả lập, xác nhận vẫn cài được sau khi tiến trình cha thoát, đạt 100% và tự mở file mới với đúng đường dẫn profile cũ.
+
+Tạo bản phát hành bắt buộc cập nhật bằng một lệnh PowerShell (chạy tại thư mục project):
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\publish-release.ps1 -Version 1.0.7 -MinimumVersion 1.0.7 -Mandatory -ReleaseNotes 'Cải thiện và sửa lỗi.'
+```
+
+Đổi `1.0.7` ở cả hai tham số thành phiên bản mới mỗi lần phát hành, và sửa `ReleaseNotes` theo nội dung thay đổi. `-Mandatory` đặt `mandatory: true` trong manifest, yêu cầu các bản có tính năng cập nhật phải cập nhật hoặc thoát ứng dụng. Script không ghi đè thư mục release đã tồn tại.
+
+Thư mục `publish/release-<version>/upload/win-x64` có đúng hai file: `latest.json` và `YTP-<version>-win-x64.zip`. Upload ZIP trước, rồi upload `latest.json` vào `/updates/ytp/win-x64/` trên server. Schema manifest giống Work Report TP (`version`, `minimumVersion`, `mandatory`, `downloadUrl`, `sha256`, `size`, `publishedAtUtc`, `releaseNotes`). Nếu bỏ `MinimumVersion`, script dùng version mới làm mức tối thiểu, giống project mẫu.
+
+ZIP chứa `app/` cho bản cài đặt/bản unpacked và `portable/YTP.exe` cho bản portable. Trình cập nhật giữ nguyên tên và vị trí file portable, không thay dữ liệu người dùng. Bản portable dùng lần đầu nằm tại `publish/release-<version>/build/YTP-portable.exe`. Các bản 1.0.5 trở về trước cần được thay/cài bản 1.0.6 một lần để có tính năng này. `npm start` không chạy tự cập nhật.
+
 ```
 npm run pack 
 ```

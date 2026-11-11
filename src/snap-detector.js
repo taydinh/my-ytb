@@ -277,6 +277,10 @@
       }, 20);
     }
 
+    evaluateMetrics(metrics) {
+      return evaluateSnapMetrics(metrics, { sensitivity: this.sensitivity });
+    }
+
     processTick(highBuffer, lowBuffer) {
       if (!this.isRunning || !this.highAnalyser || !this.lowAnalyser) return;
 
@@ -299,7 +303,7 @@
         noiseFloorHigh: this.noiseFloorHigh
       };
 
-      const result = evaluateSnapMetrics(metrics, { sensitivity: this.sensitivity });
+      const result = this.evaluateMetrics(metrics);
 
       if (this.onVolume) {
         const rawVol = Math.min(100, Math.round(peakHigh * 250));

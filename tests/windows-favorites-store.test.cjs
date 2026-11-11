@@ -49,3 +49,60 @@ test('favorites can be reordered without mutating the source list', () => {
   assert.deepEqual(moved.map(item => item.id), ['c', 'a', 'b']);
   assert.deepEqual(source.map(item => item.id), ['a', 'b', 'c']);
 });
+
+test('list membership survives metadata updates and saving old favorites', () => {
+  const storage = memoryStorage();
+  const old = FavoritesStore.sanitize({ id: 'old' });
+  assert.equal(old.listId, '');
+  const saved = FavoritesStore.save(storage, [{ ...old, listId: 'music', title: 'Updated' }]);
+  assert.equal(saved[0].listId, 'music');
+  assert.equal(FavoritesStore.load(storage)[0].listId, 'music');
+});
+
+test('favorite lists persist independently including empty lists and reject malformed entries', () => {
+  const storage = memoryStorage();
+  assert.deepEqual(FavoritesStore.loadLists(storage), []);
+  FavoritesStore.saveLists(storage, [{ id: 'music', name: '  Nhạc   hay ' }, { id: 'music', name: 'Duplicate' }, { id: 'empty', name: ' ' }, null]);
+  assert.deepEqual(FavoritesStore.loadLists(storage), [{ id: 'music', name: 'Nhạc hay' }]);
+  storage.setItem('favoriteLists', '{broken');
+  assert.deepEqual(FavoritesStore.loadLists(storage), []);
+});
+
+test('renaming a list preserves its id and video membership after reload', () => {
+  const storage = memoryStorage();
+  FavoritesStore.saveLists(storage, [{ id: 'music', name: 'Nhạc' }]);
+  FavoritesStore.save(storage, [{ id: 'a', listId: 'music' }]);
+  FavoritesStore.saveLists(storage, FavoritesStore.loadLists(storage).map(list => ({ ...list, name: 'Nhạc mới' })));
+  assert.deepEqual(FavoritesStore.loadLists(storage), [{ id: 'music', name: 'Nhạc mới' }]);
+  assert.equal(FavoritesStore.load(storage)[0].listId, 'music');
+});
+
+test('deleting only a list keeps its videos and clears membership without mutating input', () => {
+  const lists = [{ id: 'music', name: 'Nhạc' }, { id: 'other', name: 'Khác' }];
+  const videos = [{ id: 'a', listId: 'music' }, { id: 'b', listId: 'other' }, { id: 'c', listId: '' }];
+  const result = FavoritesStore.removeList(lists, videos, 'music');
+  assert.deepEqual(result.lists, [lists[1]]);
+  assert.deepEqual(result.videos, [{ id: 'a', listId: '' }, videos[1], videos[2]]);
+  assert.equal(videos[0].listId, 'music');
+  assert.equal(lists.length, 2);
+  const storage = memoryStorage();
+  FavoritesStore.saveLists(storage, result.lists);
+  FavoritesStore.save(storage, result.videos);
+  assert.equal(FavoritesStore.load(storage).length, 3);
+  assert.equal(FavoritesStore.load(storage)[0].listId, '');
+  assert.deepEqual(FavoritesStore.loadLists(storage), [lists[1]]);
+});
+
+test('deleting a list with videos removes only its members from favorites', () => {
+  const lists = [{ id: 'music', name: 'Nhạc' }, { id: 'other', name: 'Khác' }];
+  const videos = [{ id: 'a', listId: 'music' }, { id: 'b', listId: 'other' }, { id: 'c', listId: 'music' }, { id: 'd', listId: '' }];
+  const result = FavoritesStore.removeList(lists, videos, 'music', true);
+  assert.deepEqual(result.videos, [videos[1], videos[3]]);
+  assert.deepEqual(result.lists, [lists[1]]);
+  assert.equal(videos.length, 4);
+  const storage = memoryStorage();
+  FavoritesStore.save(storage, result.videos);
+  assert.deepEqual(FavoritesStore.load(storage).map(video => video.id), ['b', 'd']);
+  assert.deepEqual(FavoritesStore.removeList(lists, videos, 'missing', true), { lists, videos });
+  assert.deepEqual(FavoritesStore.removeList([{ id: 'empty', name: 'Trống' }], videos, 'empty', true), { lists: [], videos });
+});

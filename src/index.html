@@ -13,13 +13,14 @@
         <span class="logo">▶</span>
         <span class="title">Yêu Từ Pé ♥ aut</span>
         <button id="settingsBtn" class="settings-header-btn" type="button" title="Cài đặt ứng dụng" aria-label="Cài đặt" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsModal">⚙</button>
-        <button id="youtubeHomeBtn" class="youtube-home-btn" type="button" title="Mở trang chủ YouTube" aria-expanded="false" aria-controls="youtubePanel">
-          <span class="youtube-home-icon" aria-hidden="true">▶</span>
-          <span class="youtube-home-label">YouTube Home</span>
+        <button id="historyMenuBtn" class="favorites-menu-btn" type="button" title="Lịch sử 100 video đã xem" aria-label="Lịch sử 100 video đã xem" aria-expanded="false" aria-controls="favoritesPanel">
+          <svg class="history-menu-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         </button>
-        <button id="favoritesMenuBtn" class="favorites-menu-btn" type="button" title="Mở danh sách yêu thích" aria-expanded="false" aria-controls="favoritesPanel">
-          <span aria-hidden="true">☰</span>
-          <span class="favorites-menu-label">Yêu thích</span>
+        <button id="youtubeHomeBtn" class="youtube-home-btn" type="button" title="Mở trang chủ YouTube" aria-label="Mở trang chủ YouTube" aria-expanded="false" aria-controls="youtubePanel">
+          <span class="youtube-home-icon" aria-hidden="true">▶</span>
+        </button>
+        <button id="favoritesMenuBtn" class="favorites-menu-btn" type="button" title="Mở danh sách yêu thích" aria-label="Mở danh sách yêu thích" aria-expanded="false" aria-controls="favoritesPanel">
+          <span class="favorites-menu-icon" aria-hidden="true">★</span>
           <span id="favoritesCount" class="favorites-count">0</span>
         </button>
       </div>
@@ -40,6 +41,18 @@
           </div>
           <button id="closeFavoritesBtn" class="favorites-panel-close" type="button" title="Đóng danh sách yêu thích" aria-label="Đóng danh sách yêu thích">×</button>
         </header>
+        <div id="favoriteListToolbar" class="favorite-list-toolbar">
+          <select id="favoriteListFilter" aria-label="Lọc video theo danh sách"></select>
+          <div class="favorite-list-management">
+            <button id="createFavoriteListBtn" type="button" title="Tạo danh sách" aria-label="Tạo danh sách"><span aria-hidden="true">+</span><span class="create-list-label"> Tạo danh sách</span></button>
+            <button id="renameFavoriteListBtn" type="button" title="Sửa tên danh sách" aria-label="Sửa tên danh sách" disabled>✎</button>
+            <button id="deleteFavoriteListBtn" type="button" title="Xóa danh sách" aria-label="Xóa danh sách" disabled>🗑</button>
+          </div>
+          <div class="favorite-playback-toolbar">
+            <button id="playFavoriteListBtn" type="button" disabled>▶ Phát tất cả</button>
+            <button id="favoritePlaybackModeBtn" type="button" aria-expanded="false" aria-controls="favoritePlaybackModeMenu" aria-label="Chế độ phát danh sách">↻ Không lặp ▾</button>
+          </div>
+        </div>
         <div id="favoritesList" class="favorites-list" aria-live="polite"></div>
         <div id="favoritesEmpty" class="favorites-empty">
           <span aria-hidden="true">☆</span>
@@ -62,6 +75,12 @@
         <div class="toolbar">
           <button id="favoriteBtn" class="favorite-btn" type="button" title="Thêm video đang phát vào yêu thích" aria-label="Thêm video đang phát vào yêu thích" aria-pressed="false" disabled>☆</button>
           <button id="compactBtn" class="tool-btn" type="button" title="Chỉ giữ lại khung video">▣ Khung nổi</button>
+          <button id="viewModeBtn" class="tool-btn" type="button" title="Chọn giao diện xem video" aria-expanded="false" aria-controls="viewModeMenu">▤ Giao diện: Video ▾</button>
+          <div id="viewModeMenu" class="view-mode-menu" popover="auto" role="group" aria-label="Chọn giao diện xem video">
+            <button type="button" data-view-mode="video" aria-pressed="true">Video</button>
+            <button type="button" data-view-mode="youtube" aria-pressed="false">YouTube</button>
+            <button type="button" data-view-mode="ambient" aria-pressed="false">Ambient Light</button>
+          </div>
           <button id="reloadPlayerBtn" class="tool-btn" type="button" title="Tải lại trình phát; giữ vị trí video thường khi có thể">↻ Tải lại</button>
           <button id="loopBtn" class="tool-btn" type="button" title="Tự phát lại video khi kết thúc" aria-pressed="false">↻ Loop</button>
           <button id="snapBtn" class="tool-btn" type="button" aria-pressed="false" title="Bật/tắt điều khiển bằng búng tay">🤌 Búng tay</button>
@@ -114,7 +133,11 @@
           <h2 id="settingsModalTitle" class="modal-title">⚙ Cài đặt</h2>
           <button id="closeSettingsBtn" class="modal-close" type="button" title="Đóng" aria-label="Đóng">×</button>
         </div>
-        <div class="modal-body">
+        <div class="settings-tabs" role="tablist" aria-label="Nhóm cài đặt">
+          <button id="settingsTabGeneral" class="settings-tab" type="button" role="tab" aria-selected="true" aria-controls="settingsPanelGeneral" data-settings-tab>Chung</button>
+          <button id="settingsTabAmbient" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelAmbient" tabindex="-1" data-settings-tab>Ambient Light</button>
+        </div>
+        <div id="settingsPanelGeneral" class="modal-body" role="tabpanel" aria-labelledby="settingsTabGeneral">
           <section class="settings-card" aria-labelledby="generalSettingsTitle">
             <div class="settings-card-title">
               <h3 id="generalSettingsTitle">Cài đặt chung</h3>
@@ -138,7 +161,7 @@
                 <span class="settings-card-icon">🤌</span>
                 <div>
                   <h3>Điều khiển bằng búng tay</h3>
-                  <p class="settings-desc">Búng tay để Tạm dừng hoặc Tiếp tục phát video</p>
+                  <p class="settings-desc">Búng tay để thực hiện hành động đã chọn</p>
                 </div>
               </div>
               <label class="toggle-switch">
@@ -191,11 +214,91 @@
               </select>
             </div>
 
+            <div class="settings-field">
+              <label for="snapActionSelect" class="field-label">Hành động:</label>
+              <select id="snapActionSelect" class="settings-select">
+                <option value="visibility">Ẩn thân chi thuật</option>
+                <option value="playback" selected>Play/Stop</option>
+              </select>
+              <p class="settings-desc">Ẩn thân chi thuật: ẩn/hiện cửa sổ chính, vẫn giữ nhạc đang phát. Play/Stop: tạm dừng hoặc phát tiếp.</p>
+            </div>
             <div class="settings-tip">
               💡 <strong>Mẹo:</strong> Búng tay dứt khoát cách microphone 20cm – 1m. Thuật toán lọc dải tần ~3.8 kHz giúp loại trừ tiếng nói chuyện và tiếng đập bàn.
             </div>
           </section>
+          <section class="settings-card">
+            <div class="settings-card-header">
+              <div class="settings-card-title">
+                <span class="settings-card-icon">👏</span>
+                <div>
+                  <h3>Điều khiển bằng vỗ tay 2 lần</h3>
+                  <p class="settings-desc">Vỗ tay 2 lần để thực hiện hành động đã chọn</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input id="clapToggle" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="settings-field">
+              <span class="field-label">Trạng thái Micro:</span>
+              <span id="clapMicStatusBadge" class="status-badge idle">⚪ Đã tắt</span>
+            </div>
+
+            <div class="settings-field live-test-box">
+              <div class="field-label-group">
+                <span class="field-label">Thử vỗ tay 2 lần trước micro:</span>
+                <span id="clapIndicator" class="snap-indicator">✓ Đã nhận diện!</span>
+              </div>
+              <div class="meter-container">
+                <div id="clapMicMeterBar" class="meter-bar" style="width: 0%;"></div>
+              </div>
+              <div class="meter-labels">
+                <span>Yên lặng</span>
+                <span>Ngưỡng nhận diện</span>
+                <span>Mạnh</span>
+              </div>
+            </div>
+
+            <div class="settings-field">
+              <div class="field-label-group">
+                <label for="clapSensitivityRange" class="field-label">Độ nhạy nhận diện:</label>
+                <span id="clapSensitivityValueLabel" class="field-value">60%</span>
+              </div>
+              <input id="clapSensitivityRange" type="range" min="1" max="100" value="60" />
+              <div class="slider-labels">
+                <span>Thấp (ít nhầm)</span>
+                <span>Chuẩn</span>
+                <span>Cao (nhạy hơn)</span>
+              </div>
+            </div>
+
+            <div class="settings-field">
+              <div class="field-label-group">
+                <label for="clapCooldownSelect" class="field-label">Thời gian chờ giữa 2 chuỗi vỗ tay:</label>
+              </div>
+              <select id="clapCooldownSelect" class="settings-select">
+                <option value="500">0.5 giây (Nhanh)</option>
+                <option value="800" selected>0.8 giây (Tiêu chuẩn)</option>
+                <option value="1200">1.2 giây (Tránh kích hoạt kép)</option>
+              </select>
+            </div>
+
+            <div class="settings-field">
+              <label for="clapActionSelect" class="field-label">Hành động:</label>
+              <select id="clapActionSelect" class="settings-select">
+                <option value="visibility" selected>Ẩn thân chi thuật</option>
+                <option value="playback">Play/Stop</option>
+              </select>
+              <p class="settings-desc">Ẩn thân chi thuật: ẩn/hiện cửa sổ chính, vẫn giữ nhạc đang phát. Play/Stop: tạm dừng hoặc phát tiếp.</p>
+            </div>
+            <div class="settings-tip">
+              💡 <strong>Mẹo:</strong> Vỗ tay 2 lần cách nhau 150–650 ms, nghỉ ngắn giữa hai tiếng. Điều chỉnh độ nhạy theo khoảng cách tới micro.
+            </div>
+          </section>
         </div>
+        <div id="settingsPanelAmbient" class="modal-body" role="tabpanel" aria-labelledby="settingsTabAmbient" hidden></div>
         <div class="modal-footer">
           <button id="doneSettingsBtn" class="modal-btn primary" type="button">Xong</button>
         </div>
@@ -203,9 +306,45 @@
     </div>
 
     <script src="url-parser.js"></script>
+    <dialog id="favoriteListDialog" class="favorite-list-dialog" aria-labelledby="favoriteListDialogTitle">
+      <form id="favoriteListForm">
+        <h2 id="favoriteListDialogTitle">Tạo danh sách</h2>
+        <label id="favoriteListDestinationLabel" for="favoriteListDestination">Chuyển video vào</label>
+        <select id="favoriteListDestination"></select>
+        <label id="favoriteListNameLabel" for="favoriteListName">Tên danh sách mới</label>
+        <input id="favoriteListName" maxlength="80" autocomplete="off" placeholder="Nhập tên danh sách">
+        <p id="favoriteListError" role="alert"></p>
+        <div class="favorite-list-dialog-actions">
+          <button id="cancelFavoriteListBtn" type="button">Hủy</button>
+          <button type="submit">Lưu</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="deleteFavoriteListDialog" class="favorite-list-dialog" aria-labelledby="deleteFavoriteListTitle" aria-describedby="deleteFavoriteListDescription">
+      <form id="deleteFavoriteListForm">
+        <h2 id="deleteFavoriteListTitle">Xóa danh sách</h2>
+        <p id="deleteFavoriteListDescription"></p>
+        <label class="favorite-list-delete-option"><input type="radio" name="deleteListMode" value="list-only" checked> Chỉ xóa danh sách</label>
+        <p class="favorite-list-delete-hint">Giữ video trong yêu thích và chuyển về “Chưa có danh sách”.</p>
+        <label class="favorite-list-delete-option"><input type="radio" name="deleteListMode" value="with-videos"> Xóa danh sách và toàn bộ video trong danh sách</label>
+        <p class="favorite-list-delete-hint">Xóa các video này khỏi danh sách video yêu thích.</p>
+        <div class="favorite-list-dialog-actions">
+          <button id="cancelDeleteFavoriteListBtn" type="button">Hủy</button>
+          <button type="submit" class="favorite-list-danger">Xóa</button>
+        </div>
+      </form>
+    </dialog>
+    <div id="favoritePlaybackModeMenu" class="view-mode-menu" popover="auto" role="group" aria-label="Chế độ phát danh sách">
+      <button type="button" data-playback-mode="off" aria-pressed="true">Không lặp</button>
+      <button type="button" data-playback-mode="all" aria-pressed="false">Lặp tất cả</button>
+      <button type="button" data-playback-mode="shuffle" aria-pressed="false">Phát ngẫu nhiên</button>
+    </div>
     <script src="favorites-store.js"></script>
+    <script src="history-store.js"></script>
     <script src="player-shortcuts.js"></script>
     <script src="snap-detector.js"></script>
+    <script src="clap-detector.js"></script>
+    <script src="ambient-settings.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

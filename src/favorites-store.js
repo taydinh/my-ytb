@@ -26,6 +26,7 @@
       thumbnail: `https://i.ytimg.com/vi/${encodeURIComponent(id)}/mqdefault.jpg`,
       addedAt: Number(item.addedAt) || Date.now(),
       customTitle: Boolean(item.customTitle),
+      listId: typeof item.listId === 'string' ? item.listId : '',
       channelName: String(item.channelName || '').replace(/\s+/g, ' ').trim(),
       channelUrl: sanitizeChannelUrl(item.channelUrl)
     };
@@ -48,6 +49,39 @@
     return clean;
   }
 
+  const LISTS_STORAGE_KEY = 'favoriteLists';
+
+  function loadLists(storage) {
+    try {
+      return sanitizeLists(JSON.parse(storage.getItem(LISTS_STORAGE_KEY) || '[]'));
+    } catch { return []; }
+  }
+
+  function sanitizeLists(items) {
+    const seen = new Set();
+    return (Array.isArray(items) ? items : []).filter((item) => {
+      if (!item || typeof item.id !== 'string' || !item.id.trim() || typeof item.name !== 'string' || !item.name.trim() || seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    }).map((item) => ({ id: item.id, name: item.name.replace(/\s+/g, ' ').trim().slice(0, 80) }));
+  }
+
+  function saveLists(storage, items) {
+    const clean = sanitizeLists(items);
+    storage.setItem(LISTS_STORAGE_KEY, JSON.stringify(clean));
+    return clean;
+  }
+
+  function removeList(lists, videos, listId, removeVideos = false) {
+    if (!lists.some((list) => list.id === listId)) return { lists: [...lists], videos: [...videos] };
+    return {
+      lists: lists.filter((list) => list.id !== listId),
+      videos: removeVideos
+        ? videos.filter((video) => video.listId !== listId)
+        : videos.map((video) => video.listId === listId ? { ...video, listId: '' } : video)
+    };
+  }
+
   function formatDuration(seconds) {
     const total = Math.max(0, Math.round(Number(seconds) || 0));
     if (!total) return '--:--';
@@ -67,5 +101,5 @@
     return copy;
   }
 
-  return { STORAGE_KEY, sanitize, sanitizeChannelUrl, load, save, formatDuration, move };
+  return { removeList, LISTS_STORAGE_KEY, loadLists, saveLists, STORAGE_KEY, sanitize, sanitizeChannelUrl, load, save, formatDuration, move };
 });
