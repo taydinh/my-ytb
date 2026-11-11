@@ -48,25 +48,3 @@ test('YouTube panel leaves non-video navigation untouched', () => {
   assert.deepEqual(panel.state, { prevented: false, stopped: false, immediate: false });
   assert.equal(panel.sent(), undefined);
 });
-
-test('four rapid YouTube selections load only the final video', () => {
-  const renderer = fs.readFileSync(path.join(__dirname, '../src/renderer.js'), 'utf8');
-  const selectionHandler = renderer.match(/function selectVideoFromBrowsing\(url\) \{[\s\S]*?\n\}/)[0];
-  const scheduled = new Set();
-  const loaded = [];
-  const context = vm.createContext({
-    youtubePanelOpen: true,
-    playlistGeneration: 0,
-    currentVideoId: null,
-    youtubeSelectionTimer: undefined,
-    extractBrowsableVideoId: id => id,
-    loadVideo: id => loaded.push(id),
-    setTimeout: callback => { scheduled.add(callback); return callback; },
-    clearTimeout: callback => scheduled.delete(callback)
-  });
-  vm.runInContext(selectionHandler, context);
-  for (const id of ['first', 'second', 'first', 'last']) context.selectVideoFromBrowsing(id);
-  assert.deepEqual(loaded, []);
-  for (const callback of scheduled) callback();
-  assert.deepEqual(loaded, ['last']);
-});

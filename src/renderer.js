@@ -270,7 +270,6 @@ const favoriteMetadataRequests = new Set();
 let draggedFavoriteId = null;
 let compatibilityMode = false;
 let youtubePanelOpen = false;
-let youtubeSelectionTimer;
 // Last status written by the player itself; ticks may overwrite only this, never user-action messages.
 let playerStatus = '';
 // Videos whose embed was refused this session: open them on /watch directly next time.
@@ -574,7 +573,7 @@ function playerUrl(id) {
 }
 
 function watchUrl(id) {
-  return `https://www.youtube.com/watch?v=${encodeURIComponent(id)}&app=desktop&autoplay=1`;
+  return `https://www.youtube.com/watch?v=${encodeURIComponent(id)}&app=desktop`;
 }
 
 function syncPlayingVideo(value) {
@@ -713,7 +712,6 @@ async function enrichFavoriteChannels() {
 async function closeYouTubeHome() {
   if (!youtubePanelOpen) return;
   youtubePanelOpen = false;
-  clearTimeout(youtubeSelectionTimer);
   document.body.classList.remove('youtube-panel-open');
   youtubePanel.setAttribute('aria-hidden', 'true');
   youtubeHomeBtn.classList.remove('active');
@@ -722,25 +720,11 @@ async function closeYouTubeHome() {
   await window.desktop.setYoutubePanel(false);
 }
 
-function selectVideoFromBrowsing(url) {
-  if (!youtubePanelOpen) return;
-  const id = extractBrowsableVideoId(url);
-  if (!id) return;
-  clearTimeout(youtubeSelectionTimer);
-  if (id === currentVideoId) return;
-
-  // Several clicks can arrive while the player is still switching documents.
-  // Load only the last selection in a burst, unless playback changed elsewhere.
-  const generation = playlistGeneration;
-  youtubeSelectionTimer = setTimeout(() => {
-    if (youtubePanelOpen && playlistGeneration === generation && currentVideoId !== id) {
-      loadVideo(url);
-    }
-  }, 300);
-}
-
 function openVideoFromBrowsing(event) {
-  selectVideoFromBrowsing(event.url);
+  if (!youtubePanelOpen) return;
+  const id = extractBrowsableVideoId(event.url);
+  if (!id) return;
+  loadVideo(event.url);
 }
 
 // Cài một helper chạy trực tiếp trong webview. Mutation/timer ở trong trang
@@ -767,8 +751,6 @@ async function applyCleanMode() {
     const LAYOUT_CSS = [
       'html.__ytfp-fit,html.__ytfp-fit body{width:100%!important;height:100%!important;margin:0!important;overflow:hidden!important;background:#000!important}',
       'html.__ytfp-fit #movie_player{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;margin:0!important;transform:none!important;z-index:2147483647!important;background:#000!important}',
-      // YouTube can paint a page-level scrim at wider breakpoints, even when its drawer is hidden.
-      'html.__ytfp-fit body:has(#movie_player) :not(#movie_player, #movie_player *, :has(#movie_player)){visibility:hidden!important;pointer-events:none!important}',
       'html.__ytfp-fit #movie_player .html5-video-container{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}',
       'html.__ytfp-ambient #movie_player .html5-video-container{inset:var(--ytfp-inset,7%)!important;width:var(--ytfp-size,86%)!important;height:var(--ytfp-size,86%)!important;z-index:1!important;filter:var(--ytfp-shadow,none)!important}',
       'html.__ytfp-fit #movie_player video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;transform:none!important}',
@@ -1171,14 +1153,6 @@ async function applyCleanMode() {
               globalThis.__ytfpRestore = null;
             }
           }
-          // The watch page can load at a saved position while leaving playback paused.
-          const watchVideoId = location.pathname === '/watch' && moviePlayer?.getVideoData?.().video_id;
-          if (!adShowing && video?.readyState >= 2 && watchVideoId && state.startedWatchVideoId !== watchVideoId) {
-            state.startedWatchVideoId = watchVideoId;
-            if (!restore && !state.restored && video.paused && !video.ended) {
-              video.play().catch(() => {});
-            }
-          }
           if (!adShowing && video && video.readyState >= 1 && Number.isFinite(video.duration) && !moviePlayer?.getVideoData?.().isLive) {
             state.contentMedia = {
               time: video.currentTime, muted: video.muted, volume: video.volume,
@@ -1305,16 +1279,16 @@ player.addEventListener('dom-ready', () => {
 youtubeBrowser.addEventListener('will-navigate', openVideoFromBrowsing);
 youtubeBrowser.addEventListener('did-navigate-in-page', openVideoFromBrowsing);
 youtubeBrowser.addEventListener('ipc-message', (event) => {
-  if (event.channel !== 'youtube-video-selected') return;
+  if (event.channel !== 'youtube-video-selected' || !youtubePanelOpen) return;
   const [url] = event.args || [];
-  selectVideoFromBrowsing(url);
+  if (extractBrowsableVideoId(url)) loadVideo(url);
 });
 window.desktop.onVideoSelected((selection) => {
   const url = typeof selection === 'string' ? selection : selection?.url;
   const sourceId = typeof selection === 'object' ? selection?.sourceId : null;
   if (!youtubePanelOpen || !url) return;
   if (sourceId && sourceId !== youtubeBrowser.getWebContentsId()) return;
-  selectVideoFromBrowsing(url);
+  loadVideo(url);
 });
 
 player.addEventListener('did-fail-load', (event) => {
